@@ -1,0 +1,5 @@
+{
+  "name": "Phân Tích Lịch Giảng v.01",
+  "description": "Ứng dụng phân tích dữ liệu lịch giảng dạy từ hệ thống UMS (Hue University), hỗ trợ thống kê giờ giảng, phòng học và mật độ giảng dạy.",
+  "requestFramePermissions": []
+}
