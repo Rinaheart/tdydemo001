@@ -1,17 +1,17 @@
 
-// Fix: Import the TeachingClass interface from the types module
-import { TeachingClass } from '../types';
-
-export const parseScheduleHtml = (html: string): TeachingClass[] => {
+/**
+ * Parses UMS schedule HTML into an array of teaching objects.
+ */
+export const parseScheduleHtml = (html) => {
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, 'text/html');
-  const classes: TeachingClass[] = [];
+  const classes = [];
   
   const rows = Array.from(doc.querySelectorAll('tr'));
   let currentWeek = '';
 
   rows.forEach((row) => {
-    // Check if it's a week row
+    // Check if it's a week header row
     const weekTd = row.querySelector('.hitec-td-tkbTuan');
     if (weekTd) {
       currentWeek = weekTd.textContent?.trim() || '';
@@ -21,31 +21,31 @@ export const parseScheduleHtml = (html: string): TeachingClass[] => {
     // Process cells in Sang/Chieu/Toi rows
     const cells = Array.from(row.querySelectorAll('td'));
     if (cells.length >= 7) {
-      // Determine session type based on class
-      let session: 'Sang' | 'Chieu' | 'Toi' = 'Sang';
+      let session = 'Sáng';
       const firstCell = cells[0];
-      if (firstCell.classList.contains('hitec-td-tkbChieu')) session = 'Chieu';
-      if (firstCell.classList.contains('hitec-td-tkbToi')) session = 'Toi';
+      if (firstCell.classList.contains('hitec-td-tkbChieu')) session = 'Chiều';
+      if (firstCell.classList.contains('hitec-td-tkbToi')) session = 'Tối';
 
+      // Day columns usually start from index 1 to 7 (Mon-Sun)
       cells.forEach((cell, dayIndex) => {
+        // dayIndex 0 is usually the "Session" label, but we check if it has content
         const anchors = Array.from(cell.querySelectorAll('a'));
         anchors.forEach((a) => {
           const title = a.getAttribute('title') || '';
           const dataContent = a.getAttribute('data-content') || '';
           const courseCode = a.querySelector('strong')?.textContent || '';
 
-          // Parse data-content (Format: Phòng học: .B.102<br />Tiết: 1 - 4 (Thực dạy <b>0</b> tiết)<br />Giáo viên: ...)
           const roomMatch = dataContent.match(/Phòng học: ([^<]*)/);
           const slotsMatch = dataContent.match(/Tiết: (\d+) - (\d+)/);
           const teacherMatch = dataContent.match(/Giáo viên: ([^<]*)/);
 
           const room = roomMatch ? roomMatch[1].trim() : 'N/A';
-          const startSlot = slotsMatch ? parseInt(slotsMatch[1]) : 0;
-          const endSlot = slotsMatch ? parseInt(slotsMatch[2]) : 0;
+          const startSlot = parseInt(slotsMatch ? slotsMatch[1] : 0);
+          const endSlot = parseInt(slotsMatch ? slotsMatch[2] : 0);
           const teacher = teacherMatch ? teacherMatch[1].trim() : 'N/A';
 
           classes.push({
-            id: Math.random().toString(36).substr(2, 9),
+            id: Math.random().toString(36).substring(2, 11),
             courseCode,
             title,
             room,
@@ -54,9 +54,7 @@ export const parseScheduleHtml = (html: string): TeachingClass[] => {
             endSlot,
             teacher,
             weekRange: currentWeek,
-            // dayIndex 0 is the session label, dayIndex 1-7 are Mon-Sun.
-            // Normalize dayOfWeek: 0 for Monday, 6 for Sunday.
-            dayOfWeek: dayIndex - 1,
+            dayOfWeek: dayIndex - 1, // Normalized: 0 for Mon, 6 for Sun (assuming index 0 is session label)
             session
           });
         });
@@ -67,23 +65,25 @@ export const parseScheduleHtml = (html: string): TeachingClass[] => {
   return classes;
 };
 
-export const calculateStatistics = (classes: TeachingClass[]) => {
+/**
+ * Calculates summary statistics from the parsed class array.
+ */
+export const calculateStatistics = (classes) => {
   const stats = {
     totalClasses: classes.length,
     totalPeriods: 0,
     uniqueSubjects: new Set(classes.map(c => c.courseCode)).size,
     uniqueRooms: new Set(classes.map(c => c.room)),
-    dayDistribution: [0, 0, 0, 0, 0, 0, 0],
-    roomUsage: {} as Record<string, number>,
-    subjectUsage: {} as Record<string, number>,
+    dayDistribution: [0, 0, 0, 0, 0, 0, 0], // Mon-Sun
+    roomUsage: {},
+    subjectUsage: {},
   };
 
   classes.forEach(c => {
     stats.totalPeriods += (c.endSlot - c.startSlot + 1);
-    
-    // Fix: Add boundary check for dayOfWeek before accessing dayDistribution array
+    // Boundary check for dayOfWeek
     if (c.dayOfWeek >= 0 && c.dayOfWeek < 7) {
-      stats.dayDistribution[c.dayOfWeek]++;
+        stats.dayDistribution[c.dayOfWeek]++;
     }
     
     stats.roomUsage[c.room] = (stats.roomUsage[c.room] || 0) + 1;

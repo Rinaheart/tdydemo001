@@ -1,4 +1,5 @@
 
+// Define the interface for a teaching class session extracted from UMS
 export interface TeachingClass {
   id: string;
   courseCode: string;
@@ -9,16 +10,6 @@ export interface TeachingClass {
   endSlot: number;
   teacher: string;
   weekRange: string;
-  dayOfWeek: number; // 0 for Monday, 6 for Sunday
+  dayOfWeek: number;
   session: 'Sang' | 'Chieu' | 'Toi';
-}
-
-export interface Statistics {
-  totalClasses: number;
-  totalPeriods: number;
-  uniqueSubjects: number;
-  uniqueRooms: Set<string>;
-  dayDistribution: number[];
-  roomUsage: Record<string, number>;
-  subjectUsage: Record<string, number>;
 }
